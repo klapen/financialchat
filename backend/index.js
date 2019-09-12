@@ -19,7 +19,7 @@ app.get('/', function(req, res){
 
 io.on('connection', function(socket){
     console.log('user connected');
-    Chat.find().sort({'createdAt': 1}).limit(50)
+    Chat.find().sort({'createdAt': -1}).limit(50)
 	.exec(function(err, msgs){
 	    if(err){
 		console.log(`Error -> ${err}`);
@@ -28,7 +28,7 @@ io.on('connection', function(socket){
 	    }
 
 	    if(msgs.length){
-		io.emit('chat history', msgs.map( m => m.message));
+		io.emit('chat history', msgs.reverse().map( m => m.message));
 	    }
 	});
     
