@@ -19,32 +19,42 @@ app.get('/', function(req, res){
 io.on('connection', function(socket){
     console.log('user connected');
 
-    Chat.find().sort({'createdAt': -1}).limit(50)
-	.exec(function(err, msgs){
-	    if(err){
-		console.log(`Error -> ${err}`);
-		io.emit('chat history', ['Error retrieving chat history']);
-		return;
-	    }
+    socket.on('subscribe', function(room) {
+        console.log('joining room', room);
+        socket.join(room);
+	Chat.find({ room }).sort({'createdAt': -1}).limit(50)
+	    .exec(function(err, msgs){
+		if(err){
+		    console.log(`Error -> Chat find: ${err}`);
+		    io.emit('chat history', ['Error retrieving chat history']);
+		    return;
+		}
 
-	    if(msgs.length){
-		io.to(`${socket.id}`).emit('chat history', msgs.reverse().map( m => m.message));
-	    }
-	});
-    
-    socket.on('disconnect', function() {
-	console.log('user disconnected');
+		if(msgs.length){
+		    io.to(`${socket.id}`)
+			.emit(
+			    'chat history',
+			    msgs.reverse().map( m => m.message)
+			);
+		}
+	    });
     });
-    
-    socket.on('chat message', function(msg){
-	io.emit('chat message', msg);
+
+    socket.on('unsubscribe', function(room) {
+        console.log('leaving room', room);
+        socket.leave(room);
+    });
+
+    socket.on('chat message', function(data){
+	io.sockets.in(data.room).emit('chat message', data.msg);
 
 	// Save chat to the database
 	connect.then(db => {
-	    console.log('connected correctly to the server');
-	    let chatMessage = new Chat({ message: msg, sender: 'Anonymous' });
+	    let chatMessage = new Chat({ message: data.msg, sender: 'Anonymous', room: data.room });
 	    
 	    chatMessage.save();
+	}).catch(err => {
+	    console.log(`Error - DB connection: ${err}`)
 	});
     });
 });

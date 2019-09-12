@@ -3,16 +3,19 @@ const Schema = mongoose.Schema;
 
 const FinChatSchema = new Schema(
   {
-    message: {
-      type: String
-    },
-    sender: {
-      type: String
-    }
+      message: {
+	  type: String
+      },
+      sender: {
+	  type: String
+      },
+      room: {
+	  type: String
+      }
   },
-  {
-    timestamps: true
-  }
+    {
+	timestamps: true
+    }
 );
 
 let FinChat = mongoose.model('FinChat', FinChatSchema);
