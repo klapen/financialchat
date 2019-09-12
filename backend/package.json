@@ -1,0 +1,12 @@
+{
+    "name": "financial-example",
+    "version": "0.0.1",
+    "description": "backend for a chat with a financial bot to review stocks",
+    "dependencies": {
+        "express": "^4.17.1",
+        "socket.io": "^2.2.0"
+    },
+    "scripts": {
+        "start": "node index"
+    }
+}
