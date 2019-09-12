@@ -12,13 +12,13 @@ const connect = require('./dbconn');
 // Set the express.static middleware
 app.use(express.static(__dirname + "/public"));
 
-
 app.get('/', function(req, res){
     res.sendFile(__dirname + '/public/chat.html');
 });
 
 io.on('connection', function(socket){
     console.log('user connected');
+
     Chat.find().sort({'createdAt': -1}).limit(50)
 	.exec(function(err, msgs){
 	    if(err){
@@ -28,7 +28,7 @@ io.on('connection', function(socket){
 	    }
 
 	    if(msgs.length){
-		io.emit('chat history', msgs.reverse().map( m => m.message));
+		io.to(`${socket.id}`).emit('chat history', msgs.reverse().map( m => m.message));
 	    }
 	});
     
