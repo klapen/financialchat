@@ -12,12 +12,14 @@ $ cd financialchat
 
 Install dependencies
 ```
+$ cd backend
 $ npm install
 ```
 
 # Start server
 
 ```
+$ cd backend
 $ npm start
 ```
 
