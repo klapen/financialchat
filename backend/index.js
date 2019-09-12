@@ -1,6 +1,8 @@
-var app = require('express')();
-var http = require('http').createServer(app);
-var io = require('socket.io')(http);
+const app = require('express')();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+
+const port = process.env.PORT || '3000';
 
 app.get('/', function(req, res){
     res.sendFile(__dirname + '/public/chat.html');
@@ -12,6 +14,6 @@ io.on('connection', function(socket){
     });
 });
 
-http.listen(3000, function(){
-    console.log('listening on *:3000');
+http.listen(port, function(){
+    console.log(`Listening on *:${port}`);
 });
