@@ -1,4 +1,5 @@
-const app = require('express')();
+const express = require('express');
+const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
@@ -7,6 +8,10 @@ const port = process.env.PORT || '3000';
 // Database connection
 const Chat = require('./models/finchat');
 const connect = require('./dbconn');
+
+// Set the express.static middleware
+app.use(express.static(__dirname + "/public"));
+
 
 app.get('/', function(req, res){
     res.sendFile(__dirname + '/public/chat.html');
@@ -21,6 +26,7 @@ io.on('connection', function(socket){
 		io.emit('chat history', ['Error retrieving chat history']);
 		return;
 	    }
+
 	    if(msgs.length){
 		io.emit('chat history', msgs.map( m => m.message));
 	    }
