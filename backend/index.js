@@ -2,12 +2,55 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const amqp = require('amqplib/callback_api');
 
 const port = process.env.PORT || '3000';
+const amqpServer = process.env.AMQP_SERVER || 'localhost';
+const amqpQueue = process.env.AMQP_QUEUE || 'finchat-task';
 
 // Database connection
 const Chat = require('./models/finchat');
 const connect = require('./dbconn');
+
+// RabbitMQ
+function publishToQueue(msg, room){
+    amqp.connect(`amqp://${amqpServer}`, function (err, conn) {
+	conn.createChannel(function (err, channel) {
+	    channel.assertQueue(amqpQueue, { durable: true });
+
+	    const payload = JSON.stringify({
+		msg: `${msg.toUpperCase()} quote is $93.42 per share`,
+		room
+	    });
+	    channel.sendToQueue(amqpQueue, Buffer.from(payload));
+	    console.log(` [x] Sent ${msg} on room ${room}`);
+	});
+    });
+}
+
+function startWorker(){
+    amqp.connect(`amqp://${amqpServer}`, function (err, conn) {
+	conn.createChannel(function (err, channel) {
+	    channel.assertQueue(amqpQueue, { durable: true });
+	    channel.prefetch(1);
+    
+	    console.log('Waiting tasks...');
+
+	    channel.consume(amqpQueue, async (message) => {
+		setTimeout(function(){
+		    const content = message.content.toString();
+		    const task = JSON.parse(content);
+		    
+		    io.sockets.in(task.room).emit('chat message', task.msg);
+		    
+		    channel.ack(message);
+		    
+		    console.log(` [x] Recieved ${task.msg} for room ${task.room}`);
+		},4000);
+	    });
+	});
+    });
+}
 
 // Set the express.static middleware
 app.use(express.static(__dirname + "/public"));
@@ -46,6 +89,11 @@ io.on('connection', function(socket){
     });
 
     socket.on('chat message', function(data){
+	if(data.msg.startsWith('/stock=')){
+	    const stock = data.msg.split('=')[1];
+	    publishToQueue(stock, data.room);
+	    return;
+	}
 	io.sockets.in(data.room).emit('chat message', data.msg);
 
 	// Save chat to the database
@@ -61,4 +109,11 @@ io.on('connection', function(socket){
 
 http.listen(port, function(){
     console.log(`Listening on *:${port}`);
+    startWorker();
+});
+
+process.on('exit', (code) => {
+    channel.close();
+    connection.close();
+    console.log(`Closing rabbitmq channel and connection`);
 });

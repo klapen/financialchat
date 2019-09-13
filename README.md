@@ -1,20 +1,31 @@
 # Financial Chat
 
-Simple chat using NodeJS with [Socket.io](https://socket.io/) and [Mongo](https://www.mongodb.com/)
+Simple chat using NodeJS with [Socket.io](https://socket.io/), [Mongo](https://www.mongodb.com/) and [RabbitMQ](https://www.rabbitmq.com/).
 
 # Before you start
 
-You need to start a MongoDB server. You can use a docker image:
+You need to start a MongoDB and RabbitMQ server. You can use a docker image:
 
 ```
-$ docker run -it -name mongo -rm -p 27017:27017 mongo
+$ docker run -it --name mongo --rm -p 27017:27017 mongo
+$ docker run -it --name rabbitmq --rm -p 5672:5672 rabbitmq
 ```
 
-With this one, you can use the default connection string *mongodb://localhost:27017/*. If not, you can set your own mongo url setting the enviroment variable *MONGO_URL*. Also, the default database name is *finchat* but it can be changed using the enviroment variable *MONGO_DB_NAME*.
+The default values are:
+- Mongo
+-- *MONGO_URL*: mongodb://localhost:27017/
+-- *MONGO_DB_NAME*: finchat
+- RabbitMQ
+-- *AMQP_SERVER*: localhost
+-- *AMQP_QUEUE*: finchat-task
+
+If you don't want to use the default values, just set the enviroment variable as you wish.
 
 ```
 $ export MONGO_URL = your_url
 $ export MONGO_DB_NAME = your_db_database
+$ export AMQP_SERVER = your_amqp_server
+$ export AMQP_QUEUE = your_amqp_queue
 ```
 
 # Start server
