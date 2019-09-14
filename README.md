@@ -36,11 +36,18 @@ For login, it uses *express-sessions* that uses a SECRET string for configuratio
 $ export SECRET = your_secret_value
 ```
 
-For testing, you can populate the database with some seed users:
+For testing, you can populate the database with some seed users. The users can be modified on the file *backend/seed.js*. To populate the DB run the following command:
 
 ```
 $ npm run initdb
 ```
+
+This command,by default, will load 2 users to test:
+
+| Username  | Password | Email		 |
+|-----------|----------|-----------------|
+| admin     | 12345    | admin@admin.com |
+| user	    | 54321    | user@user.com   |
 
 # Start server
 
@@ -68,7 +75,13 @@ $ export PORT = XXXX
 
 # How to use
 
-ToDo
+Open on a web browser a [login page](http://127.0.0.1:8000/) and enter a valid username, password and room to join; and start to chat.
+
+If you want to use the stock quote bot, send a the command __/stock=*stock_code*__. The stock code must be a valid stock code for [Stooq webpage](https://stooq.com/). It will return the followin message:
+
+> StockBot: [stock_code] quote is ${value} per share
+
+Where **stock_code** is the requested code and the **value** is the closing value.
 
 # Release note
 
