@@ -43,6 +43,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(session(sessionConfig));
 app.use(express.static(__dirname + '/public'));
 
+// Chat - ToDo: change to ./routers/chat.js
 router.get('/chat', auth, function(req, res){
     let sess = req.session;
     if(!req.user) {
@@ -51,7 +52,7 @@ router.get('/chat', auth, function(req, res){
     res.sendFile(__dirname + '/public/chat.html');
 });
 
-// Login
+// Login - ToDo: change to ./routers/login.js
 router.get('/', (req,res) => {
     res.sendFile(__dirname + '/public/login.html');    
 });
@@ -125,7 +126,7 @@ router.get('/logout',(req,res) => {
 });
 
 // Socket.io
-io.use(sharedsession( session(sessionConfig), {
+io.use(sharedsession(session(sessionConfig), {
     autoSave:true
 })); 
 
@@ -137,7 +138,7 @@ io.on('connection', function(socket){
 	const room = socket.handshake.session.room;
         console.log('joining room', room);
         socket.join(room);
-	Chat.find({ room }).sort({'createdAt': -1}).limit(50)
+	Chat.find({ room }).sort({'createdAt': -1}).limit(50).populate('sender')
 	    .exec(function(err, msgs){
 		if(err){
 		    console.log(`Error -> Chat find: ${err}`);
@@ -149,7 +150,7 @@ io.on('connection', function(socket){
 		    io.to(`${socket.id}`)
 			.emit(
 			    'chat history',
-			    msgs.reverse().map( m => `[${m.createdAt}] ${m.sender}: ${m.message}`)
+			    msgs.reverse().map( m => `[${m.createdAt}] ${m.sender.name}: ${m.message}`)
 			);
 		}
 	    });
@@ -170,14 +171,27 @@ io.on('connection', function(socket){
 	}
 
 	// Save chat to the database
-	connect.then(db => {
-	    let chatMessage = new Chat({ message: data.msg, sender, room });
-	    
-	    chatMessage.save().then(msg =>{
-		io.sockets.in(room).emit('chat message', `[${msg.createdAt}] ${sender}: ${data.msg}`);
+	const token = socket.handshake.session.token;
+	utils.decodeToken(token, (err, decoded) =>{
+	    if(err) {
+		console.log(`Error -> Token decoding: ${err}`)
+		io.to(`${socket.id}`).emit('chat error', `SystemBot: Invalid token. Please login again to start chatting again.`);
+		return;
+	    }
+	    const userId = decoded._id;
+	    connect.then(db => {
+		let chatMessage = new Chat({
+		    message: data.msg,
+		    sender: userId,
+		    room
+		});
+
+		chatMessage.save().then(msg =>{
+		    io.sockets.in(room).emit('chat message', `[${msg.createdAt}] ${sender}: ${data.msg}`);
+		});
+	    }).catch(err => {
+		console.log(`Error -> DB connection: ${err}`)
 	    });
-	}).catch(err => {
-	    console.log(`Error - DB connection: ${err}`)
 	});
     });
 });

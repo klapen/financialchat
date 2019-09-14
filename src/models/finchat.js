@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const FKHelper = require('../helpers/foreignKey');
 
 const FinChatSchema = new Schema(
   {
@@ -7,7 +8,15 @@ const FinChatSchema = new Schema(
 	  type: String
       },
       sender: {
-	  type: String
+	  type: Schema.Types.ObjectId,
+	  ref: 'User',
+	  validate: {
+	      isAsync: true,
+	      validator: function(v){
+		  return FKHelper(mongoose.model('User'), v);
+	      },
+	      message: 'User doesn\'t exist'
+	  }
       },
       room: {
 	  type: String

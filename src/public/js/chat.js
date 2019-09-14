@@ -16,6 +16,10 @@ $(function () {
 	$('#messages').append($('<li>').text(msg));
     });
 
+    socket.on('chat error', function(msg){
+	$('#messages').append($('<li>').text(msg));
+    });
+
     socket.on('chat history', function(msgs){
 	msgs.forEach( function(m){
 	    $('#messages').append($('<li>').text(m))
