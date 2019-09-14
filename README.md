@@ -36,6 +36,12 @@ For login, it uses *express-sessions* that uses a SECRET string for configuratio
 $ export SECRET = your_secret_value
 ```
 
+For testing, you can populate the database with some seed users:
+
+```
+$ npm run initdb
+```
+
 # Start server
 
 First, get the repository and install the dependencies:
