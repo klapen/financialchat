@@ -21,6 +21,6 @@
     },
     "scripts": {
         "start": "nodemon index",
-	"initdb": "node ./seed"
+        "initdb": "node ./seed"
     }
 }

@@ -149,7 +149,7 @@ io.on('connection', function(socket){
 		    io.to(`${socket.id}`)
 			.emit(
 			    'chat history',
-			    msgs.reverse().map( m => `${m.sender}: ${m.message}`)
+			    msgs.reverse().map( m => `[${m.createdAt}] ${m.sender}: ${m.message}`)
 			);
 		}
 	    });
@@ -168,13 +168,14 @@ io.on('connection', function(socket){
 	    publisher.addToQueue(stock, room);
 	    return;
 	}
-	io.sockets.in(room).emit('chat message', `${sender}: ${data.msg}`);
 
 	// Save chat to the database
 	connect.then(db => {
 	    let chatMessage = new Chat({ message: data.msg, sender, room });
 	    
-	    chatMessage.save();
+	    chatMessage.save().then(msg =>{
+		io.sockets.in(room).emit('chat message', `[${msg.createdAt}] ${sender}: ${data.msg}`);
+	    });
 	}).catch(err => {
 	    console.log(`Error - DB connection: ${err}`)
 	});
