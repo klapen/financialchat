@@ -1,13 +1,10 @@
 $(function () {
     var socket = io('http://localhost:3000/');
-    var room = 'test';
-
-    socket.emit('subscribe', room);
+    socket.emit('subscribe');
 
     $('form').submit(function(e){
 	e.preventDefault(); // prevents page reloading
 	var payload = {
-	    'room': room,
 	    'msg':  $('#m').val()
 	};
 	socket.emit('chat message', payload);
@@ -26,6 +23,6 @@ $(function () {
     });
 
     socket.on('disconnect', function() {
-	socket.emit('unsubscribe', room);
+	socket.emit('unsubscribe');
     });
 });

@@ -12,6 +12,7 @@ const client		= redis.createClient();
 const sharedsession     = require('express-socket.io-session');
 const auth		= require('./middleware/auth');
 const bcrypt		= require('bcrypt');
+const utils		= require('./utils');
 
 // Database connection
 const { User, validate } = require('./models/user');
@@ -58,6 +59,23 @@ router.get('/', (req,res) => {
 router.post('/', (req, res) => {
     const email = req.body.email;
     const pass = req.body.pass;
+    const room = req.body.room;
+
+    if(!room && room.length < 3){
+	res.json({ error: 'Room can not be empty or less than 3 characters'});
+	return;
+    }
+
+    if(!email && !pass){
+	res.json({ error: 'Email and password are required'});
+	return;
+    }
+
+    if(!utils.validateEmail(email)){
+	res.json({ error: 'Invalid email'});
+	return;
+    }
+
     bcrypt.hash(pass, 10)
 	.then(password => {
 	    User.findOne({email})
@@ -77,6 +95,7 @@ router.post('/', (req, res) => {
 			    let sess = req.session;
 			    sess.email = user.email;
 			    sess.username = user.name;
+			    sess.room = room;
 
 			    const token = user.generateAuthToken();
 			    sess.token = token;
@@ -114,7 +133,8 @@ io.on('connection', function(socket){
     console.log('user connected');
     const sender = socket.handshake.session.username;
 
-    socket.on('subscribe', function(room) {
+    socket.on('subscribe', function() {
+	const room = socket.handshake.session.room;
         console.log('joining room', room);
         socket.join(room);
 	Chat.find({ room }).sort({'createdAt': -1}).limit(50)
@@ -135,22 +155,24 @@ io.on('connection', function(socket){
 	    });
     });
 
-    socket.on('unsubscribe', function(room) {
+    socket.on('unsubscribe', function() {
+	const room = socket.handshake.session.room;
         console.log('leaving room', room);
         socket.leave(room);
     });
 
     socket.on('chat message', function(data){
+	const room = socket.handshake.session.room;
 	if(data.msg.startsWith('/stock=')){
 	    const stock = data.msg.split('=')[1];
-	    publisher.addToQueue(stock, data.room);
+	    publisher.addToQueue(stock, room);
 	    return;
 	}
-	io.sockets.in(data.room).emit('chat message', `${sender}: ${data.msg}`);
+	io.sockets.in(room).emit('chat message', `${sender}: ${data.msg}`);
 
 	// Save chat to the database
 	connect.then(db => {
-	    let chatMessage = new Chat({ message: data.msg, sender, room: data.room });
+	    let chatMessage = new Chat({ message: data.msg, sender, room });
 	    
 	    chatMessage.save();
 	}).catch(err => {
