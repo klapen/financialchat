@@ -42,9 +42,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(session(sessionConfig));
 app.use(express.static(__dirname + '/public'));
 
-router.get('/chat', function(req, res){
+router.get('/chat', auth, function(req, res){
     let sess = req.session;
-    if(!sess.email) {
+    if(!req.user) {
         return res.redirect('/');
     }
     res.sendFile(__dirname + '/public/chat.html');
@@ -77,7 +77,10 @@ router.post('/', (req, res) => {
 			    let sess = req.session;
 			    sess.email = user.email;
 			    sess.username = user.name;
-			    res.json({ token: 'weqweqe' });
+
+			    const token = user.generateAuthToken();
+			    sess.token = token;
+			    res.json({ token });
 			}).catch(err =>{
 			    console.log(`Error -> Bcrypt compare: ${err}`)
 			    res.json({ error: 'Error comparing the passwords'});
