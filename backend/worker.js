@@ -1,18 +1,16 @@
-const amqp = require('amqplib/callback_api');
-const getCSV = require('get-csv');
-
-const amqpServer = process.env.AMQP_SERVER || 'localhost';
-const amqpQueue = process.env.AMQP_QUEUE || 'finchat-task';
+const config	= require('./config')
+const amqp	= require('amqplib/callback_api');
+const getCSV	= require('get-csv');
 
 const start = function(next){
-    amqp.connect(`amqp://${amqpServer}`, function (err, conn) {
+    amqp.connect(`amqp://${config.amqp.server}`, function (err, conn) {
 	conn.createChannel(function (err, channel) {
-	    channel.assertQueue(amqpQueue, { durable: true });
+	    channel.assertQueue(config.amqp.queue, { durable: true });
 	    channel.prefetch(1);
     
 	    console.log('Waiting tasks...');
 
-	    channel.consume(amqpQueue, async (message) => {
+	    channel.consume(config.amqp.queue, async (message) => {
 		const content = message.content.toString();
 		const task = JSON.parse(content);
 		getCSV(`https://stooq.com/q/l/?s=${task.msg.toLowerCase()}&f=sd2t2ohlcv&h&e=csv`)

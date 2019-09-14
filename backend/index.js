@@ -1,5 +1,6 @@
+const config            = require('./config');
 const express		= require('express');
-const session           = require('express-session')
+const session           = require('express-session');
 const bodyParser	= require('body-parser');
 const router		= express.Router();
 const app		= express();
@@ -10,23 +11,19 @@ const redisStore        = require('connect-redis')(session);
 const client		= redis.createClient();
 const sharedsession     = require("express-socket.io-session");
 
-const port = process.env.PORT || '3000';
-const secret = process.env.SECRET || 'aSu8TL/~I?T3PMg7OJ;i9FU\iaep2BS1&SaJ83rGP#3J7&T#?ftf,5,9|YJ64';
-
-
 // Database connection
 const Chat = require('./models/finchat');
 const connect = require('./dbconn');
 
 // Redis
 const store = new redisStore({
-    host: process.env.REDIS_SERVER || 'localhost',
-    port: process.env.REDIS_PORT || 6379,
+    host: config.redis.server,
+    port: config.redis.port,
     client: client,
-    ttl : process.env.REDIS_TTL || 260
+    ttl: config.redis.ttl
 });
 const sessionConfig = {
-    secret,
+    secret: config.secret,
     store,
     saveUninitialized: true,
     resave: true
@@ -148,8 +145,8 @@ io.on('connection', function(socket){
     });
 });
 
-http.listen(port, function(){
-    console.log(`Listening on *:${port}`);
+http.listen(config.port, function(){
+    console.log(`Listening on *:${config.port}`);
     worker.start((room, msg) =>{
 	io.sockets.in(room).emit('chat message', msg);
     });
