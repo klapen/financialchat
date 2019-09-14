@@ -21,6 +21,14 @@
     },
     "scripts": {
         "start": "nodemon index",
-        "initdb": "node ./seed"
+        "initdb": "node ./seed",
+	"lint": "eslint --ext .js . ./",
+	"lint-fix": "eslint --fix --ext .js . ./",
+	"test-lint": "npm run lint"
+    },
+    "devDependencies": {
+        "eslint": "^6.4.0",
+        "eslint-config-airbnb-base": "^14.0.0",
+        "eslint-plugin-import": "^2.18.2"
     }
 }
