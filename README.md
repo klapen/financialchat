@@ -36,7 +36,7 @@ For login, it uses *express-sessions* that uses a SECRET string for configuratio
 $ export SECRET = your_secret_value
 ```
 
-For testing, you can populate the database with some seed users. The users can be modified on the file *backend/seed.js*. To populate the DB run the following command:
+For testing, you can populate the database with some seed users. The users can be modified on the file *src/seed.js*. To populate the DB run the following command:
 
 ```
 $ npm run initdb
@@ -56,14 +56,14 @@ First, get the repository and install the dependencies:
 ```
 $ git clone https://github.com/klapen/financialchat.git
 $ cd financialchat
-$ cd backend
+$ cd src
 $ npm install
 ```
 
 To start the server, follow the next commands:
 
 ```
-$ cd backend
+$ cd src
 $ npm start
 ```
 
