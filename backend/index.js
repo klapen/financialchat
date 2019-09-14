@@ -9,10 +9,14 @@ const io		= require('socket.io')(http);
 const redis		= require('redis');
 const redisStore        = require('connect-redis')(session);
 const client		= redis.createClient();
-const sharedsession     = require("express-socket.io-session");
+const sharedsession     = require('express-socket.io-session');
+const auth		= require('./middleware/auth');
+const bcrypt		= require('bcrypt');
 
 // Database connection
+const { User, validate } = require('./models/user');
 const Chat = require('./models/finchat');
+
 const connect = require('./dbconn');
 
 // Redis
@@ -36,7 +40,7 @@ const publisher = require('./publisher');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(session(sessionConfig));
-app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + '/public'));
 
 router.get('/chat', function(req, res){
     let sess = req.session;
@@ -51,34 +55,41 @@ router.get('/', (req,res) => {
     res.sendFile(__dirname + '/public/login.html');    
 });
 
-const users = {
-    'admin@admin.com':{
-	name: 'Admin',
-	pass: '12345'
-    },
-    'user@user.com':{
-	name: 'User',
-	pass: '54321'
-    }
-}
-
-router.post('/', (req,res) => {
+router.post('/', (req, res) => {
     const email = req.body.email;
-    if(!users[email]) {
-	res.json({ error: 'User not found'});
-	return;
-    }
-
     const pass = req.body.pass;
-    if(users[email].pass !== pass)  {
-	res.json({ error: 'Invalid password'});
-	return;
-    }
+    bcrypt.hash(pass, 10)
+	.then(password => {
+	    User.findOne({email})
+		.then(user => {
+		    if(!user){
+			res.json({ error: 'User not found'});
+			return;
+		    }
 
-    let sess = req.session;
-    sess.email = req.body.email;
-    sess.username = users[email].name;
-    res.json({ token: 'weqweqe' });
+		    bcrypt.compare(pass, user.password)
+			.then(isMatch => {
+			    if(!isMatch){
+				res.json({ error: 'Incorrect password'});
+				return;
+			    };
+			    
+			    let sess = req.session;
+			    sess.email = user.email;
+			    sess.username = user.name;
+			    res.json({ token: 'weqweqe' });
+			}).catch(err =>{
+			    console.log(`Error -> Bcrypt compare: ${err}`)
+			    res.json({ error: 'Error comparing the passwords'});
+			})
+		}).catch(err =>{
+		    console.log(`Error -> User find: ${err}`)
+		    res.json({ error: 'Error on the database'});
+		}); 
+	}).catch(err =>{
+	    console.log(`Error -> Bcrypt: ${err}`)
+	    res.json({ error: 'Error getting the password encryption'});
+	}); 
 });
 
 router.get('/logout',(req,res) => {

@@ -14,7 +14,7 @@ const users = [
 	name: 'User',
 	password: '54321'
     }
-]
+];
 
 function populate(){
     return users.reduce((acc, usr) =>{

@@ -3,11 +3,11 @@ $(document).ready(function(){
     $("#submit").click(function(){
         email=$("#email").val();
         pass=$("#password").val();
-        /*
-         * ToDo: change to token
-         */
         $.post("/",{ email:email, pass:pass },function(data){
-	    console.log(data);
+	    if(data.error){
+		$("#error-msg").text(data.error);
+		$("#password").val('');
+	    }
 	    if(data.token) {
                 window.location.href="/chat";
 	    }
