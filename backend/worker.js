@@ -20,7 +20,7 @@ const start = function(next){
 			if(rows.length > 1){
 			    console.log(`Warning -> Stock API: Returned more than 1 row; it will take only the first data`);
 			}
-			
+
 			const data = rows[0];
 			const msg = data.Close !== 'N/D' ?
 			      `StockBot: ${data.Symbol} quote is $ ${data.Close} per share` :

@@ -1,6 +1,6 @@
 # Financial Chat
 
-Simple chat using NodeJS with [Socket.io](https://socket.io/), [Mongo](https://www.mongodb.com/) and [RabbitMQ](https://www.rabbitmq.com/).
+Simple chat using NodeJS with [Socket.io](https://socket.io/), [Mongo](https://www.mongodb.com/), [Redis](https://redis.io/) and [RabbitMQ](https://www.rabbitmq.com/).
 
 # Before you start
 
@@ -8,6 +8,7 @@ You need to start a MongoDB and RabbitMQ server. You can use a docker image:
 
 ```
 $ docker run -it --name mongo --rm -p 27017:27017 mongo
+$ docker run -it --name redis --rm -p 6379:6379 redis
 $ docker run -it --name rabbitmq --rm -p 5672:5672 rabbitmq
 ```
 
@@ -18,14 +19,21 @@ The default values are:
 - RabbitMQ
 -- *AMQP_SERVER*: localhost
 -- *AMQP_QUEUE*: finchat-task
+- Redis
+-- *REDIS_SERVER*: localhost
+-- *REDIS_PORT*: 6379
+-- *REDIS_TTL*: 260
 
 If you don't want to use the default values, just set the enviroment variable as you wish.
 
 ```
-$ export MONGO_URL = your_url
-$ export MONGO_DB_NAME = your_db_database
-$ export AMQP_SERVER = your_amqp_server
-$ export AMQP_QUEUE = your_amqp_queue
+$ export ENVIRONMENT_VAR = your_value
+```
+
+For login, it uses *express-sessions* that uses a SECRET string for configuration. For production environments, it should use a private one:
+
+```
+$ export SECRET = your_secret_value
 ```
 
 # Start server
