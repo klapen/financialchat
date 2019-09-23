@@ -11,15 +11,13 @@ const RedisStore = require('connect-redis')(session);
 
 const client = redis.createClient();
 const sharedsession = require('express-socket.io-session');
-const bcrypt = require('bcrypt');
 const auth = require('./middleware/auth');
 const config = require('./config');
 const utils = require('./utils');
 
-// Database connection
-const { User } = require('./models/user');
-const Chat = require('./models/finchat');
-
+// Controllers
+const userctrl = require('./controller/user');
+const chatctrl = require('./controller/chat');
 const connect = require('./dbconn');
 
 // Redis
@@ -59,9 +57,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { email } = req.body;
-  const { pass } = req.body;
-  const { room } = req.body;
+  const { email, pass, room } = req.body;
 
   if (!room && room.length < 3) {
     res.json({ error: 'Room can not be empty or less than 3 characters' });
@@ -78,44 +74,30 @@ router.post('/', (req, res) => {
     return;
   }
 
-  User.findOne({ email })
-    .then((user) => {
-      if (!user) {
-        res.json({ error: 'User not found' });
-        return;
-      }
-
-      bcrypt.compare(pass, user.password)
-        .then((isMatch) => {
-          if (!isMatch) {
-            res.json({ error: 'Incorrect password' });
-            return;
-          }
-
-          const sess = req.session;
-          sess.email = user.email;
-          sess.username = user.name;
-          sess.room = room;
-
-          const token = user.generateAuthToken();
-          sess.token = token;
-          res.json({ token });
-        }).catch((err) => {
-          console.log(`Error -> Bcrypt compare: ${err}`);
-          res.json({ error: 'Error comparing the passwords' });
-        });
-    }).catch((err) => {
-      console.log(`Error -> User find: ${err}`);
+  userctrl.getLoginUser(email, pass, (err, user) => {
+    if (err) {
       res.json({ error: 'Error on the database' });
-    });
+      return;
+    }
+
+    const sess = req.session;
+    sess.email = user.email;
+    sess.username = user.name;
+    sess.room = room;
+
+    const token = user.generateAuthToken();
+    sess.token = token;
+    res.json({ token });
+  });
 });
 
 router.get('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      return console.log(`Error -> Logout: ${err}`);
+      console.log(`Error -> Logout: ${err}`);
+      return;
     }
-    return res.redirect('/');
+    res.redirect('/');
   });
 });
 
@@ -132,22 +114,22 @@ io.on('connection', (socket) => {
     const { room } = socket.handshake.session;
     console.log('joining room', room);
     socket.join(room);
-    Chat.find({ room }).sort({ createdAt: -1 }).limit(50).populate('sender')
-      .exec((err, msgs) => {
-        if (err) {
-          console.log(`Error -> Chat find: ${err}`);
-          io.emit('chat history', ['Error retrieving chat history']);
-          return;
-        }
 
-        if (msgs.length) {
-          io.to(`${socket.id}`)
-            .emit(
-              'chat history',
-              msgs.reverse().map((m) => `[${m.createdAt}] ${m.sender.name}: ${m.message}`),
-            );
-        }
-      });
+    chatctrl.getRoomHistory(room, (err, msgs) => {
+      if (err) {
+        console.log(err);
+        io.emit('chat history', ['Error retrieving chat history']);
+        return;
+      }
+
+      if (msgs.length) {
+        io.to(`${socket.id}`)
+          .emit(
+            'chat history',
+            msgs.reverse().map((m) => `[${m.createdAt}] ${m.sender.name}: ${m.message}`),
+          );
+      }
+    });
   });
 
   socket.on('unsubscribe', () => {
@@ -173,34 +155,34 @@ io.on('connection', (socket) => {
         return;
       }
       const userId = decoded._id;
-      connect.then(() => {
-        const chatMessage = new Chat({
-          message: data.msg,
-          sender: userId,
-          room,
-        });
 
-        chatMessage.save().then((msg) => {
-          io.sockets.in(room).emit('chat message', `[${msg.createdAt}] ${sender}: ${data.msg}`);
-        });
-      }).catch((error) => {
-        console.log(`Error -> DB connection: ${error}`);
+      chatctrl.saveMessage(room, data.msg, userId, (error, msg) => {
+        if (error) {
+          console.log(error);
+          return;
+        }
+
+        io.sockets.in(room).emit('chat message', `[${msg.createdAt}] ${sender}: ${data.msg}`);
       });
     });
   });
 });
 
-http.listen(config.port, () => {
-  console.log(`Listening on *:${config.port}`);
-  worker.start((room, msg) => {
-    io.sockets.in(room).emit('chat message', msg);
+connect.then(() => {
+  http.listen(config.port, () => {
+    console.log(`Listening on *:${config.port}`);
+    worker.start((room, msg) => {
+      io.sockets.in(room).emit('chat message', msg);
+    });
   });
-});
 
-process.on('exit', () => {
-  worker.stop(() => {
-    console.log('Closing rabbitmq channel and connection');
+  process.on('exit', () => {
+    worker.stop(() => {
+      console.log('Closing rabbitmq channel and connection');
+    });
   });
-});
 
-app.use('/', router);
+  app.use('/', router);
+}).catch((errDB) => {
+  console.log(`Error -> DB connection: ${errDB}`);
+});
