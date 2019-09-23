@@ -9,11 +9,19 @@ const users = [
     email: 'admin@admin.com',
     name: 'Admin',
     password: '12345',
+    role: 'admin',
   },
   {
     email: 'user@user.com',
     name: 'User',
     password: '54321',
+    role: 'admin',
+  },
+  {
+    email: 'bot@bot.com',
+    name: 'Bot',
+    password: '98765',
+    role: 'bot',
   },
 ];
 
@@ -36,6 +44,7 @@ function populate() {
           name: usr.name,
           password: usr.password,
           email: usr.email,
+          role: usr.role,
         });
 
         bcrypt.hash(newUser.password, 10)

@@ -1,0 +1,21 @@
+version: "3"
+services:
+  mongo:
+    image: mongo:3.4
+    volumes:
+      - /data/db/mongo
+    ports:
+      - "27017:27017"
+
+  redis:
+    image: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - /data/db/redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672:5672"

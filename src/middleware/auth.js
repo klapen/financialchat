@@ -1,7 +1,13 @@
 const utils = require('../utils');
 
 function auth(req, res, next) {
-  const { token } = req.session;
+  let token;
+  if (req.headers.authorization) {
+    token = req.headers.authorization;
+  } else {
+    token = req.session.token;
+  }
+
   if (!token) return res.status(401).send('Access denied. No token provided.');
 
   return utils.decodeToken(token, (err, decoded) => {
@@ -10,6 +16,7 @@ function auth(req, res, next) {
       return;
     }
     req.user = decoded;
+    req.user.token = token;
     next();
   });
 }

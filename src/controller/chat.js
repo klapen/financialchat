@@ -1,4 +1,5 @@
 const Chat = require('../models/finchat');
+const utils = require('../utils');
 
 function getRoomHistory(room, cb) {
   Chat.find({ room }).sort({ createdAt: -1 }).limit(50).populate('sender')
@@ -12,19 +13,27 @@ function getRoomHistory(room, cb) {
     });
 }
 
-function saveMessage(room, msg, userId, cb) {
-  const chatMessage = new Chat({
-    message: msg,
-    sender: userId,
-    room,
-  });
+function saveMessage(room, msg, token, cb) {
+  utils.decodeToken(token, (err, decoded) => {
+    if (err) {
+      cb(`Error -> Token decoding: ${err}`);
+      return;
+    }
+    const userId = decoded._id;
 
-  chatMessage.save()
-    .then((message) => {
-      cb(null, message);
-    }).catch((error) => {
-      cb(`Error -> Chat message save: ${error}`);
+    const chatMessage = new Chat({
+      message: msg,
+      sender: userId,
+      room,
     });
+
+    chatMessage.save()
+      .then((message) => {
+        cb(null, message);
+      }).catch((error) => {
+        cb(`Error -> Chat message save: ${error}`);
+      });
+  });
 }
 
 module.exports = {
