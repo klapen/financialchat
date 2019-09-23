@@ -2,6 +2,8 @@
 const bcrypt = require('bcrypt');
 const { User, validate } = require('./models/user');
 
+const connect = require('./dbconn');
+
 const users = [
   {
     email: 'admin@admin.com',
@@ -52,4 +54,6 @@ function populate() {
 }
 
 console.log('---> Please press ctrl+c when the process ends');
-populate();
+connect.then(() => {
+  populate();
+});
