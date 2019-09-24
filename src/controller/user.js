@@ -27,6 +27,26 @@ function getLoginUser(email, pass, cb) {
     });
 }
 
+function createUser(usr) {
+  const newUser = new User({
+    name: usr.name,
+    password: usr.pass,
+    email: usr.email,
+    role: usr.role,
+  });
+
+  bcrypt.hash(newUser.password, 10)
+    .then((password) => {
+      newUser.password = password;
+      newUser.save().then(() => {
+        console.log(`User ${usr.email} registered successfully.`);
+      });
+    }).catch((err) => {
+      console.log(`Error -> Bcrypt: ${err}`);
+    });
+}
+
 module.exports = {
   getLoginUser,
+  createUser,
 };

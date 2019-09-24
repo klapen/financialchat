@@ -8,9 +8,12 @@ function auth(req, res, next) {
     token = req.session.token;
   }
 
-  if (!token) return res.status(401).send('Access denied. No token provided.');
+  if (!token) {
+    res.status(401).send('Access denied. No token provided.');
+    return;
+  }
 
-  return utils.decodeToken(token, (err, decoded) => {
+  utils.decodeToken(token, (err, decoded) => {
     if (err) {
       res.status(400).send(err);
       return;
@@ -21,4 +24,17 @@ function auth(req, res, next) {
   });
 }
 
-module.exports = auth;
+function isAdmin(req, res, next) {
+  console.log(req.user);
+  if (req.user.role !== 'admin') {
+    res.status(401).send('Access denied. User is not admin');
+    return;
+  }
+
+  next();
+}
+
+module.exports = {
+  auth,
+  isAdmin,
+};

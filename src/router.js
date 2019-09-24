@@ -3,8 +3,8 @@ const sockets = require('./sockets');
 
 const router = express.Router();
 
-const utils = require('./utils');
-const auth = require('./middleware/auth');
+const { auth, isAdmin } = require('./middleware/auth');
+const userdata = require('./middleware/userdata');
 const userctrl = require('./controller/user');
 const chatctrl = require('./controller/chat');
 
@@ -44,22 +44,38 @@ router.post('/message', auth, (req, res) => {
   });
 });
 
+// SIGN UP
+router.post('/signup', auth, isAdmin, userdata, (req, res) => {
+  const {
+    email, pass, name, role,
+  } = req.body;
+
+  if (!name || !role) {
+    res.status(400).send({ error: 'name and role are required' });
+    return;
+  }
+
+  userctrl.createUser({
+    name, pass, email, role,
+  }, (err, usr) => {
+    if (err) {
+      res.status(500).send({ error: 'Error creating the user' });
+      return;
+    }
+
+    res.status(200).send({
+      name: usr.name,
+      email: usr.email,
+      role: usr.role,
+    });
+  });
+});
 // LOGIN:
-router.post('/', (req, res) => {
+router.post('/', userdata, (req, res) => {
   const { email, pass, room } = req.body;
 
   if (!room && room.length < 3) {
-    res.json({ error: 'Room can not be empty or less than 3 characters' });
-    return;
-  }
-
-  if (!email && !pass) {
-    res.json({ error: 'Email and password are required' });
-    return;
-  }
-
-  if (!utils.validateEmail(email)) {
-    res.json({ error: 'Invalid email' });
+    res.status(400).send({ error: 'Room can not be empty or less than 3 characters' });
     return;
   }
 

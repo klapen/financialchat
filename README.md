@@ -56,8 +56,6 @@ This command,by default, will load 2 users to test:
 | user      | 54321    | user@user.com   |
 | bot       | 98765    | bot@bot.com     |
 
-
-
 # Start server
 
 First, get the repository and install the dependencies:
@@ -105,7 +103,37 @@ If you want to use the stock quote bot, send a the command __/stock=*stock_code*
 
 Where **stock_code** is the requested code and the **value** is the closing value.
 
+## Create user
+
+As a helper funcionality, it is possible to create a user with an available endpoint. First you need to get and admin token:
+```
+POST {:baseUrl}/
+Content-Type: application/json
+
+{
+        "email": "admin@admin.com", 
+        "pass": "12345",
+        "room": "blah"
+}
+```
+
+Once you have the token, just send a request to *signup* endpoint to create a new user:
+```
+POST {:baseUrl}/signup/
+Content-Type: application/json
+Authorization: :token
+
+
+{
+        "name": "{:username}",
+        "email": "{:user_email}",
+        "pass": "{:password}",
+        "role": "{user | bot | admin}"
+}
+```
+
 # Release note
 
 - v0.0.1 Beta version
 - v0.1.1 Decouple bot version
+- v0.1.2 New Sign up endpoint version
